@@ -1,0 +1,80 @@
+[
+  {
+    "chunk_id": "A.1",
+    "title": "Global Monthly Cap",
+    "text": "No automated retention package may exceed \u00a3150.00 in total value per driver, per calendar month.",
+    "issue_types": [],
+    "tiers": [],
+    "is_global_guardrail": true,
+    "source": "data/uk_driver_retention_recovery.md"
+  },
+  {
+    "chunk_id": "A.2",
+    "title": "Credit Stacking",
+    "text": "A driver may not receive more than two immediate credits within the same 24-hour window. If a third issue occurs, the system must escalate to a human City Manager.",
+    "issue_types": [],
+    "tiers": [],
+    "is_global_guardrail": true,
+    "source": "data/uk_driver_retention_recovery.md"
+  },
+  {
+    "chunk_id": "A.3",
+    "title": "Tier Multipliers",
+    "text": "Goodwill credits in category Churn are strictly reserved for Gold and Silver tiers only.",
+    "issue_types": [],
+    "tiers": [
+      "Silver",
+      "Gold"
+    ],
+    "is_global_guardrail": true,
+    "source": "data/uk_driver_retention_recovery.md"
+  },
+  {
+    "chunk_id": "B.1",
+    "title": "Airport Short Fares (SFP)",
+    "text": "Applicable only if wait time is greater than 90 minutes and trip distance is less than 3 kilometres. Gold tier cap: \u00a325.00 maximum per instance. Silver and Bronze tier cap: \u00a315.00 maximum per instance. The AI must not use INC-002 (\u00a350) for standard short-fare recovery; it is reserved for documented multi-day systemic failures.",
+    "issue_types": [
+      "airport_short_fare"
+    ],
+    "tiers": [
+      "Bronze",
+      "Silver",
+      "Gold"
+    ],
+    "is_global_guardrail": false,
+    "source": "data/uk_driver_retention_recovery.md"
+  },
+  {
+    "chunk_id": "B.2",
+    "title": "Technical & GPS Glitches",
+    "text": "Maximum compensation is \u00a310.00 per confirmed glitch using INC-003. Priority Support Access INC-004 should be offered for recurring geofence issues when there are more than two tickets in seven days.",
+    "issue_types": [
+      "technical_gps"
+    ],
+    "tiers": [],
+    "is_global_guardrail": false,
+    "source": "data/uk_driver_retention_recovery.md"
+  },
+  {
+    "chunk_id": "B.3",
+    "title": "New Starters",
+    "text": "For tenure below three months, priority should be given to Commission Shields INC-006 rather than direct credits, to encourage continued app usage.",
+    "issue_types": [
+      "new_starter"
+    ],
+    "tiers": [],
+    "is_global_guardrail": false,
+    "source": "data/uk_driver_retention_recovery.md"
+  },
+  {
+    "chunk_id": "B.4",
+    "title": "Infeasible Quests",
+    "text": "If a driver completes more than 80 percent of a Quest but fails because of documented low demand, and diagnostics confirm fewer than 1.5 offers per hour, a Goodwill Gesture of \u00a320.00 is permitted.",
+    "issue_types": [
+      "quest"
+    ],
+    "tiers": [],
+    "is_global_guardrail": false,
+    "source": "data/uk_driver_retention_recovery.md"
+  }
+]

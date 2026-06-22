@@ -1,0 +1,263 @@
+{
+  "conversation_id": "eval-maria-self-correction",
+  "driver": {
+    "driver_id": "D-LON-001",
+    "name": "Maria S.",
+    "city": "London",
+    "loyalty_tier": "Gold",
+    "tenure_months": 24,
+    "lifetime_value_euro": 12500.0,
+    "avg_cancellation_rate": 0.02,
+    "airport_short_fare_count_30d": 3,
+    "confirmed_valid_complaints_1y": 0,
+    "current_status": "ONLINE",
+    "recent_sentiment": "Frustrated - mentions airport queue issues specifically."
+  },
+  "observation": {
+    "issue_type": "airport_short_fare",
+    "wait_minutes": 135.0,
+    "trip_distance_km": 1.5,
+    "quest_completion_ratio": null,
+    "offers_per_hour": null,
+    "multi_day_systemic_failure": false,
+    "policy_question": false,
+    "related_ticket_count": 2,
+    "recurring_technical_tickets_7d": 0,
+    "extracted_facts": [
+      "Maximum evidenced wait: 135 minutes",
+      "Minimum evidenced trip distance: 1.50 km"
+    ]
+  },
+  "plan": {
+    "driver_id": "D-LON-001",
+    "diagnosis": "Repeated airport short-fare friction for a high-value Gold driver.",
+    "churn_risk": "high",
+    "actions": [
+      {
+        "action_type": "credit",
+        "name": "Standard airport short-fare recovery",
+        "incentive_id": "INC-001",
+        "category": "Airport",
+        "value_gbp": 25.0,
+        "value_percent": 0.0,
+        "immediate_credit": true,
+        "counts_toward_monthly_cap": true,
+        "rationale": "Recover the relationship after repeated airport losses.",
+        "evidence_ids": [
+          "T-1001",
+          "T-1007"
+        ],
+        "policy_chunk_ids": [
+          "B.1"
+        ],
+        "requires_human_approval": false
+      }
+    ],
+    "assumptions": [
+      "Revision generated from Compliance Critic feedback; no rejected action may be executed."
+    ],
+    "missing_data": [],
+    "revision": 1,
+    "total_gbp_value": 25.0
+  },
+  "critic": {
+    "decision": "APPROVE",
+    "violations": [],
+    "verified_total_gbp": 25.0,
+    "policy_chunk_ids": [
+      "A.1",
+      "A.2",
+      "A.3",
+      "B.1",
+      "B.4",
+      "B.3"
+    ],
+    "summary": "Plan satisfies all deterministic policy checks."
+  },
+  "manager_message": "Decision: APPROVE\nDiagnosis: Repeated airport short-fare friction for a high-value Gold driver.\nRecommended actions:\n- Standard airport short-fare recovery (£25.00): Recover the relationship after repeated airport losses.\nCompliance checks:\n- No outstanding policy findings.",
+  "trace": [
+    {
+      "timestamp": "2026-06-22T06:44:53.619516Z",
+      "node": "context",
+      "outcome": "resolved",
+      "payload": {
+        "driver_id": "D-LON-001"
+      }
+    },
+    {
+      "timestamp": "2026-06-22T06:44:53.620043Z",
+      "node": "evidence",
+      "outcome": "collected",
+      "payload": {
+        "ticket_ids": [
+          "T-1099",
+          "T-1029",
+          "T-1001",
+          "T-1007",
+          "T-1010",
+          "T-1081"
+        ],
+        "incentive_ids": [
+          "INC-001",
+          "INC-002",
+          "INC-003",
+          "INC-004",
+          "INC-007",
+          "D-001",
+          "Q-101",
+          "Q-102",
+          "Q-103"
+        ],
+        "policy_chunk_ids": [
+          "A.1",
+          "A.2",
+          "A.3",
+          "B.1",
+          "B.4",
+          "B.3"
+        ],
+        "ledger_complete": true,
+        "observation": {
+          "issue_type": "airport_short_fare",
+          "wait_minutes": 135.0,
+          "trip_distance_km": 1.5,
+          "quest_completion_ratio": null,
+          "offers_per_hour": null,
+          "multi_day_systemic_failure": false,
+          "policy_question": false,
+          "related_ticket_count": 2,
+          "recurring_technical_tickets_7d": 0,
+          "extracted_facts": [
+            "Maximum evidenced wait: 135 minutes",
+            "Minimum evidenced trip distance: 1.50 km"
+          ]
+        }
+      }
+    },
+    {
+      "timestamp": "2026-06-22T06:44:53.620079Z",
+      "node": "strategist",
+      "outcome": "proposed",
+      "payload": {
+        "driver_id": "D-LON-001",
+        "diagnosis": "Repeated airport short-fare friction for a high-value Gold driver.",
+        "churn_risk": "high",
+        "actions": [
+          {
+            "action_type": "credit",
+            "name": "Premium Airport Short Fare Recovery",
+            "incentive_id": "INC-002",
+            "category": "Airport",
+            "value_gbp": 50.0,
+            "value_percent": 0.0,
+            "immediate_credit": true,
+            "counts_toward_monthly_cap": true,
+            "rationale": "Recover the relationship after repeated airport losses.",
+            "evidence_ids": [
+              "T-1001",
+              "T-1007"
+            ],
+            "policy_chunk_ids": [
+              "B.1"
+            ],
+            "requires_human_approval": false
+          }
+        ],
+        "assumptions": [],
+        "missing_data": [],
+        "revision": 0,
+        "total_gbp_value": 50.0
+      }
+    },
+    {
+      "timestamp": "2026-06-22T06:44:53.620136Z",
+      "node": "critic",
+      "outcome": "REJECT",
+      "payload": {
+        "decision": "REJECT",
+        "violations": [
+          {
+            "rule_id": "B.1_TIER_CAP",
+            "severity": "ERROR",
+            "message": "£50.00 exceeds the Gold airport cap of £25.00.",
+            "suggested_fix": "Reduce the action to no more than £25.00.",
+            "action_index": 0
+          },
+          {
+            "rule_id": "B.1_INC002_RESTRICTED",
+            "severity": "ERROR",
+            "message": "INC-002 is reserved for documented multi-day systemic failures.",
+            "suggested_fix": "Use INC-001 at the tier cap for standard short-fare recovery.",
+            "action_index": 0
+          }
+        ],
+        "verified_total_gbp": 50.0,
+        "policy_chunk_ids": [
+          "A.1",
+          "A.2",
+          "A.3",
+          "B.1",
+          "B.4",
+          "B.3"
+        ],
+        "summary": "Plan rejected with 2 blocking policy violation(s)."
+      }
+    },
+    {
+      "timestamp": "2026-06-22T06:44:53.620274Z",
+      "node": "strategist",
+      "outcome": "revised",
+      "payload": {
+        "driver_id": "D-LON-001",
+        "diagnosis": "Repeated airport short-fare friction for a high-value Gold driver.",
+        "churn_risk": "high",
+        "actions": [
+          {
+            "action_type": "credit",
+            "name": "Standard airport short-fare recovery",
+            "incentive_id": "INC-001",
+            "category": "Airport",
+            "value_gbp": 25.0,
+            "value_percent": 0.0,
+            "immediate_credit": true,
+            "counts_toward_monthly_cap": true,
+            "rationale": "Recover the relationship after repeated airport losses.",
+            "evidence_ids": [
+              "T-1001",
+              "T-1007"
+            ],
+            "policy_chunk_ids": [
+              "B.1"
+            ],
+            "requires_human_approval": false
+          }
+        ],
+        "assumptions": [
+          "Revision generated from Compliance Critic feedback; no rejected action may be executed."
+        ],
+        "missing_data": [],
+        "revision": 1,
+        "total_gbp_value": 25.0
+      }
+    },
+    {
+      "timestamp": "2026-06-22T06:44:53.620297Z",
+      "node": "critic",
+      "outcome": "APPROVE",
+      "payload": {
+        "decision": "APPROVE",
+        "violations": [],
+        "verified_total_gbp": 25.0,
+        "policy_chunk_ids": [
+          "A.1",
+          "A.2",
+          "A.3",
+          "B.1",
+          "B.4",
+          "B.3"
+        ],
+        "summary": "Plan satisfies all deterministic policy checks."
+      }
+    }
+  ]
+}

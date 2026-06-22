@@ -1,0 +1,16 @@
+services:
+  copilot:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      STRATEGIST_PROVIDER: heuristic
+      LOG_LEVEL: INFO
+    volumes:
+      - copilot-state:/app/var
+    read_only: true
+    tmpfs:
+      - /tmp
+
+volumes:
+  copilot-state:

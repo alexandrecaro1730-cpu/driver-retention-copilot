@@ -1,0 +1,20 @@
+{
+  "_meta": {
+    "purpose": "Synthetic ledger values for a reproducible take-home demo only",
+    "warning": "Do not treat this file as source operational data"
+  },
+  "drivers": {
+    "D-LON-001": {
+      "month_to_date_gbp": 0.0,
+      "immediate_credits_last_24h": 0
+    },
+    "D-LON-002": {
+      "month_to_date_gbp": 140.0,
+      "immediate_credits_last_24h": 2
+    },
+    "D-LON-003": {
+      "month_to_date_gbp": 20.0,
+      "immediate_credits_last_24h": 1
+    }
+  }
+}

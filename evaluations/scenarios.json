@@ -1,0 +1,14 @@
+[
+  {"id":"airport_gold_over_cap","expected":"REJECT","rule":"B.1_TIER_CAP"},
+  {"id":"airport_silver_15","expected":"CONDITIONAL_APPROVE","rule":"SERVICE_PARAMETERISATION_REQUIRED"},
+  {"id":"airport_wait_exactly_90","expected":"REJECT","rule":"B.1_WAIT_THRESHOLD"},
+  {"id":"airport_distance_exactly_3","expected":"REJECT","rule":"B.1_DISTANCE_THRESHOLD"},
+  {"id":"airport_missing_telemetry","expected":"REJECT","rule":"B.1_MISSING_EVIDENCE"},
+  {"id":"third_credit_24h","expected":"ESCALATE","rule":"A.2_CREDIT_STACKING"},
+  {"id":"monthly_cap_exceeded","expected":"REJECT","rule":"A.1_MONTHLY_CAP"},
+  {"id":"bronze_churn_goodwill","expected":"REJECT","rule":"A.3_CHURN_TIER"},
+  {"id":"technical_over_cap","expected":"REJECT","rule":"B.2_TECHNICAL_CAP"},
+  {"id":"priority_support_without_recurrence","expected":"REJECT","rule":"B.2_PRIORITY_SUPPORT_THRESHOLD"},
+  {"id":"quest_missing_demand","expected":"REJECT","rule":"B.4_QUEST_ELIGIBILITY"},
+  {"id":"unknown_ledger","expected":"CONDITIONAL_APPROVE","rule":"A.1_LEDGER_UNKNOWN"}
+]
