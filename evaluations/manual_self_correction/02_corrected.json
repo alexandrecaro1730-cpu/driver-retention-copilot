@@ -1,0 +1,60 @@
+{
+  "run_id": "d8a16765-49ca-4448-977e-92acc4bc5b24",
+  "evaluated_at": "2026-06-25T06:24:27.891672Z",
+  "phase": "revision",
+  "valid_schema": true,
+  "plan": {
+    "driver_id": "D-LON-001",
+    "diagnosis": "Maria is at high churn risk due to repeated airport short-fare losses after waits exceeding 90 minutes, with recent frustration specifically focused on airport queue issues.",
+    "churn_risk": "high",
+    "actions": [
+      {
+        "action_type": "credit",
+        "name": "Standard Airport Short Fare Recovery",
+        "incentive_id": "INC-001",
+        "category": "Airport",
+        "value_gbp": 25.0,
+        "value_percent": 0.0,
+        "immediate_credit": true,
+        "counts_toward_monthly_cap": true,
+        "rationale": "Recommend a £25.00 standard airport short-fare recovery credit. The evidenced 135-minute wait and 1.5-kilometre trip meet the airport short-fare criteria, and £25.00 is the maximum permitted per instance for a Gold-tier driver. The complete ledger shows no month-to-date retention value and no immediate credits in the previous 24 hours, so the proposed credit remains within the monthly and credit-stacking guardrails. This is a recommendation only and does not indicate that payment has been issued or approved.",
+        "evidence_ids": [
+          "T-1001",
+          "T-1007",
+          "observation.wait_minutes",
+          "observation.trip_distance_km",
+          "profile.loyalty_tier",
+          "profile.airport_short_fare_count_30d",
+          "profile.recent_sentiment",
+          "ledger.month_to_date_gbp",
+          "ledger.immediate_credits_last_24h"
+        ],
+        "policy_chunk_ids": [
+          "B.1",
+          "A.1",
+          "A.2"
+        ],
+        "requires_human_approval": false
+      }
+    ],
+    "assumptions": [],
+    "missing_data": [],
+    "revision": 1
+  },
+  "critic": {
+    "decision": "APPROVE",
+    "violations": [],
+    "verified_total_gbp": 25.0,
+    "policy_chunk_ids": [
+      "A.1",
+      "A.2",
+      "A.3",
+      "B.1",
+      "B.4",
+      "B.3"
+    ],
+    "summary": "Plan satisfies all deterministic policy checks."
+  },
+  "errors": [],
+  "next_revision_bundle": null
+}

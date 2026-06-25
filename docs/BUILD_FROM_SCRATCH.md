@@ -8,7 +8,7 @@ cd driver-retention-copilot
 
 touch pyproject.toml README.md Makefile Dockerfile compose.yaml .env.example .gitignore .pre-commit-config.yaml
 touch app/{__init__.py,api.py,cli.py,config.py,container.py,exceptions.py,observability.py}
-touch app/agents/{__init__.py,base.py,heuristic_strategist.py,openai_strategist.py}
+touch app/agents/{__init__.py,base.py,heuristic_strategist.py,llm_strategist.py}
 touch app/compliance/{__init__.py,engine.py,rules.py}
 touch app/data/{__init__.py,driver_repository.py,ledger_repository.py,ticket_repository.py}
 touch app/diagnostics/{__init__.py,extractor.py}

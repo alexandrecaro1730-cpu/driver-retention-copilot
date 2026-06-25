@@ -1,25 +1,30 @@
 __pycache__/
 *.py[cod]
 *.egg-info/
-
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
-
 .coverage
+.coverage.*
 coverage.xml
 htmlcov/
-
 dist/
 build/
-
 .venv/
 .env
-
 *.sqlite3
+*.sqlite3-*
 *.db
-var/
-
 .DS_Store
 .idea/
 .vscode/
+var/*.sqlite3
+var/*.sqlite3-*
+
+# Local manual-LLM working bundles. Curated traces belong in evaluations/.
+manual_runs/
+
+# Temporary repair/backup files.
+*.backup
+*.broken
+*.bak

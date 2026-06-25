@@ -1,10 +1,10 @@
 """Runtime configuration.
 
-Business intent: configuration must make safe behaviour the default. The deterministic
-strategist is selected unless an operator explicitly enables an external LLM provider.
+Business intent: safe, reproducible behaviour is the default. Reviewers can explicitly enable a real
+LLM Strategist with their own credentials, while deterministic compliance remains authoritative.
 
-Technical intent: paths are resolved once and injected into repositories, avoiding hidden
-global filesystem dependencies and making tests straightforward.
+Technical intent: paths and provider settings are resolved once and injected at the composition root,
+avoiding hidden globals and making tests straightforward.
 """
 
 from __future__ import annotations
@@ -23,6 +23,10 @@ class Settings(BaseSettings):
     strategist_provider: Literal["heuristic", "openai"] = "heuristic"
     openai_api_key: str | None = None
     openai_model: str | None = None
+    llm_timeout_seconds: float = Field(default=30.0, gt=0, le=120)
+    llm_max_attempts: int = Field(default=3, ge=1, le=5)
+    llm_max_output_tokens: int = Field(default=3_000, ge=500, le=20_000)
+
     data_dir: Path = Path("./data")
     state_db_path: Path = Path("./var/copilot_state.sqlite3")
     log_level: str = "INFO"

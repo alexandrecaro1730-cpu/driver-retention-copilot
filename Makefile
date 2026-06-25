@@ -1,45 +1,90 @@
-.PHONY: install install-locked install-all test test-fast lint typecheck security quality run api demo trace clean
+.PHONY: install install-locked install-all test test-fast lint format typecheck security quality run api demo trace manual-export manual-evaluate clean
+
+PYTHON ?= python
+DRIVER_ID ?= D-LON-001
+MESSAGE ?= Maria waited 135 minutes for a 1.5km airport fare. What should we do?
+MANUAL_DIR ?= manual_runs/maria
 
 install:
-	python -m pip install -e .
+	$(PYTHON) -m pip install -e .
 
 install-locked:
-	python -m pip install -r requirements-runtime.lock
-	python -m pip install -e . --no-deps
+	$(PYTHON) -m pip install -r requirements-runtime.lock
+	$(PYTHON) -m pip install -e . --no-deps
 
 install-all:
-	python -m pip install -e ".[ai,pdf,ui,dev]"
+	$(PYTHON) -m pip install -e ".[ai,pdf,ui,dev]"
 
 test:
-	python -m pytest --cov=app --cov-report=term-missing --cov-report=xml
+	$(PYTHON) -m pytest \
+		--cov=app \
+		--cov-branch \
+		--cov-report=term-missing \
+		--cov-report=xml \
+		--cov-fail-under=85
 
 test-fast:
-	python -m pytest -q
+	$(PYTHON) -m pytest -q
 
 lint:
-	ruff check .
-	ruff format --check .
+	$(PYTHON) -m ruff check .
+	$(PYTHON) -m ruff format --check .
+
+format:
+	$(PYTHON) -m ruff check . --fix
+	$(PYTHON) -m ruff format .
 
 typecheck:
-	mypy app
+	$(PYTHON) -m mypy app
 
 security:
-	bandit -q -r app
-	pip-audit
+	$(PYTHON) -m bandit -q -r app
+	$(PYTHON) -m pip_audit
 
 quality: lint typecheck test security
 
 api:
-	uvicorn app.api:create_app --factory --host 0.0.0.0 --port 8000 --reload
+	$(PYTHON) -m uvicorn app.api:create_app \
+		--factory \
+		--host 0.0.0.0 \
+		--port 8000 \
+		--reload
 
 run:
-	python -m app.cli chat --driver-id D-LON-001 --message "Maria waited 135 minutes for a 1.5km airport fare. What should we do?"
+	$(PYTHON) -m app.cli chat \
+		--driver-id "$(DRIVER_ID)" \
+		--message "$(MESSAGE)"
 
 demo:
-	python -m app.cli demo-maria
+	$(PYTHON) -m app.cli demo-maria
 
 trace:
-	python scripts/generate_eval_trace.py
+	$(PYTHON) scripts/generate_eval_trace.py
+
+manual-export:
+	$(PYTHON) -m app.cli manual-export \
+		--driver-id "$(DRIVER_ID)" \
+		--message "$(MESSAGE)" \
+		--output-dir "$(MANUAL_DIR)"
+
+manual-evaluate:
+	$(PYTHON) -m app.cli manual-evaluate \
+		--bundle-file "$(MANUAL_DIR)/request.json" \
+		--response-file "$(MANUAL_DIR)/response.json"
 
 clean:
-	rm -rf .pytest_cache .mypy_cache .ruff_cache htmlcov .coverage coverage.xml dist build var/*.sqlite3
+	rm -rf \
+		.pytest_cache \
+		.mypy_cache \
+		.ruff_cache \
+		htmlcov \
+		.coverage \
+		.coverage.* \
+		coverage.xml \
+		dist \
+		build \
+		var/*.sqlite3 \
+		var/*.sqlite3-* \
+		*.egg-info
+	find . -type d -name "__pycache__" -prune -exec rm -rf {} +
+	find . -type f \( -name "*.pyc" -o -name "*.pyo" \) -delete

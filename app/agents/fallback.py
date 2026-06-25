@@ -1,11 +1,10 @@
 """Resilient Strategist wrapper.
 
 Business intent: a transient model outage must not leave a manager without a safe diagnostic path.
-The fallback remains recommendation-only and is still validated by the same Compliance Critic.
+The fallback remains recommendation-only and is validated by the same Compliance Critic.
 
-Technical intent: only availability failures trigger fallback. Configuration errors are raised during
-composition, and deterministic compliance remains unchanged regardless of which Strategist proposed
-the plan.
+Technical intent: availability failures trigger deterministic fallback for both proposal and repair.
+Configuration errors still fail during composition so a broken deployment is visible immediately.
 """
 
 from __future__ import annotations
@@ -30,12 +29,18 @@ class FallbackStrategist:
         except ToolUnavailableError:
             LOGGER.warning(
                 "primary_strategist_unavailable_using_fallback",
-                extra={"driver_id": evidence.profile.driver_id},
+                extra={"driver_id": evidence.profile.driver_id, "operation": "propose"},
             )
             return self._fallback.propose(evidence)
 
     def revise(
         self, plan: RetentionPlan, critique: CriticResult, evidence: EvidenceBundle
     ) -> RetentionPlan:
-        # Repair is deliberately deterministic even when the initial proposal came from an LLM.
-        return self._fallback.revise(plan, critique, evidence)
+        try:
+            return self._primary.revise(plan, critique, evidence)
+        except ToolUnavailableError:
+            LOGGER.warning(
+                "primary_strategist_unavailable_using_fallback",
+                extra={"driver_id": evidence.profile.driver_id, "operation": "revise"},
+            )
+            return self._fallback.revise(plan, critique, evidence)
