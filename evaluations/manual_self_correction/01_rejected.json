@@ -1,11 +1,11 @@
 {
-  "run_id": "d8a16765-49ca-4448-977e-92acc4bc5b24",
-  "evaluated_at": "2026-06-25T06:18:42.760869Z",
+  "run_id": "814aa1f0-f3ca-4038-81de-8647cee2f9b3",
+  "evaluated_at": "2026-06-25T08:41:06.096793Z",
   "phase": "proposal",
   "valid_schema": true,
   "plan": {
     "driver_id": "D-LON-001",
-    "diagnosis": "Maria is at high churn risk due to repeated airport short-fare losses.",
+    "diagnosis": "Maria is at high churn risk after repeated airport short-fare losses.",
     "churn_risk": "high",
     "actions": [
       {
@@ -17,7 +17,7 @@
         "value_percent": 0.0,
         "immediate_credit": true,
         "counts_toward_monthly_cap": true,
-        "rationale": "Provide a larger recovery payment because the airport issue has occurred repeatedly.",
+        "rationale": "Recover trust after the repeated airport incident.",
         "evidence_ids": [
           "T-1001",
           "T-1007",
@@ -27,7 +27,7 @@
         "policy_chunk_ids": [
           "B.1"
         ],
-        "requires_human_approval": true
+        "requires_human_approval": false
       }
     ],
     "assumptions": [],
@@ -42,27 +42,28 @@
         "severity": "ERROR",
         "message": "£50.00 exceeds the Gold airport cap of £25.00.",
         "suggested_fix": "Reduce the action to no more than £25.00.",
-        "action_index": 0
+        "action_index": 0,
+        "policy_chunk_ids": [
+          "B.1"
+        ]
       },
       {
         "rule_id": "B.1_INC002_RESTRICTED",
         "severity": "ERROR",
         "message": "INC-002 is reserved for documented multi-day systemic failures.",
         "suggested_fix": "Use INC-001 at the tier cap for standard short-fare recovery.",
-        "action_index": 0
+        "action_index": 0,
+        "policy_chunk_ids": [
+          "B.1"
+        ]
       }
     ],
     "verified_total_gbp": 50.0,
     "policy_chunk_ids": [
-      "A.1",
-      "A.2",
-      "A.3",
-      "B.1",
-      "B.4",
-      "B.3"
+      "B.1"
     ],
     "summary": "Plan rejected with 2 blocking policy violation(s)."
   },
   "errors": [],
-  "next_revision_bundle": "manual_runs/maria/revision-1/request.json"
+  "next_revision_bundle": "evaluations/manual_self_correction/revision_request.json"
 }

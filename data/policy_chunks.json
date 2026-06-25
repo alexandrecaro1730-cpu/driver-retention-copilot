@@ -6,7 +6,10 @@
     "issue_types": [],
     "tiers": [],
     "is_global_guardrail": true,
-    "source": "data/uk_driver_retention_recovery.md"
+    "source": "data/uk_driver_retention_recovery.md",
+    "source_document": "uk_driver_retention_recovery.md",
+    "source_page": null,
+    "source_sha256": "35d28e9ab469c85703d0b782e4324f073c1fe5e796dbcc3ad3be32aa6e4f6eea"
   },
   {
     "chunk_id": "A.2",
@@ -15,7 +18,10 @@
     "issue_types": [],
     "tiers": [],
     "is_global_guardrail": true,
-    "source": "data/uk_driver_retention_recovery.md"
+    "source": "data/uk_driver_retention_recovery.md",
+    "source_document": "uk_driver_retention_recovery.md",
+    "source_page": null,
+    "source_sha256": "35d28e9ab469c85703d0b782e4324f073c1fe5e796dbcc3ad3be32aa6e4f6eea"
   },
   {
     "chunk_id": "A.3",
@@ -27,7 +33,10 @@
       "Gold"
     ],
     "is_global_guardrail": true,
-    "source": "data/uk_driver_retention_recovery.md"
+    "source": "data/uk_driver_retention_recovery.md",
+    "source_document": "uk_driver_retention_recovery.md",
+    "source_page": null,
+    "source_sha256": "35d28e9ab469c85703d0b782e4324f073c1fe5e796dbcc3ad3be32aa6e4f6eea"
   },
   {
     "chunk_id": "B.1",
@@ -42,7 +51,10 @@
       "Gold"
     ],
     "is_global_guardrail": false,
-    "source": "data/uk_driver_retention_recovery.md"
+    "source": "data/uk_driver_retention_recovery.md",
+    "source_document": "uk_driver_retention_recovery.md",
+    "source_page": null,
+    "source_sha256": "35d28e9ab469c85703d0b782e4324f073c1fe5e796dbcc3ad3be32aa6e4f6eea"
   },
   {
     "chunk_id": "B.2",
@@ -53,7 +65,10 @@
     ],
     "tiers": [],
     "is_global_guardrail": false,
-    "source": "data/uk_driver_retention_recovery.md"
+    "source": "data/uk_driver_retention_recovery.md",
+    "source_document": "uk_driver_retention_recovery.md",
+    "source_page": null,
+    "source_sha256": "35d28e9ab469c85703d0b782e4324f073c1fe5e796dbcc3ad3be32aa6e4f6eea"
   },
   {
     "chunk_id": "B.3",
@@ -64,7 +79,10 @@
     ],
     "tiers": [],
     "is_global_guardrail": false,
-    "source": "data/uk_driver_retention_recovery.md"
+    "source": "data/uk_driver_retention_recovery.md",
+    "source_document": "uk_driver_retention_recovery.md",
+    "source_page": null,
+    "source_sha256": "35d28e9ab469c85703d0b782e4324f073c1fe5e796dbcc3ad3be32aa6e4f6eea"
   },
   {
     "chunk_id": "B.4",
@@ -75,6 +93,9 @@
     ],
     "tiers": [],
     "is_global_guardrail": false,
-    "source": "data/uk_driver_retention_recovery.md"
+    "source": "data/uk_driver_retention_recovery.md",
+    "source_document": "uk_driver_retention_recovery.md",
+    "source_page": null,
+    "source_sha256": "35d28e9ab469c85703d0b782e4324f073c1fe5e796dbcc3ad3be32aa6e4f6eea"
   }
 ]

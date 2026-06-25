@@ -23,11 +23,12 @@ jobs:
           cache: pip
       - run: python -m pip install --upgrade pip
       - run: python -m pip install -e ".[dev,pdf]"
-      - run: ruff check .
-      - run: ruff format --check .
-      - run: mypy app
-      - run: python -m pytest --cov=app --cov-report=term-missing --cov-report=xml
+      - run: python -m ruff check .
+      - run: python -m ruff format --check .
+      - run: python -m mypy app
+      - run: python -m scripts.reviewer_demo
+      - run: python -m pytest --cov=app --cov-branch --cov-report=term-missing --cov-report=xml --cov-fail-under=85
       - if: matrix.python-version == '3.12'
-        run: bandit -q -r app
+        run: python -m bandit -q -r app
       - if: matrix.python-version == '3.12'
-        run: pip-audit
+        run: python -m pip_audit

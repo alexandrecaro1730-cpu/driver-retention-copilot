@@ -77,18 +77,31 @@
   "manager_message": "Decision: APPROVE\nDiagnosis: Repeated airport short-fare friction for a high-value Gold driver.\nRecommended actions:\n- Standard airport short-fare recovery (£25.00): Recover the relationship after repeated airport losses.\nCompliance checks:\n- No outstanding policy findings.",
   "trace": [
     {
-      "timestamp": "2026-06-22T06:44:53.619516Z",
-      "node": "context",
+      "timestamp": "2026-06-25T08:42:01.001856Z",
+      "node": "context_resolver",
       "outcome": "resolved",
       "payload": {
-        "driver_id": "D-LON-001"
+        "sequence": 1,
+        "driver_id": "D-LON-001",
+        "reused_memory": false
       }
     },
     {
-      "timestamp": "2026-06-22T06:44:53.620043Z",
-      "node": "evidence",
-      "outcome": "collected",
+      "timestamp": "2026-06-25T08:42:01.001894Z",
+      "node": "tool.driver_repository",
+      "outcome": "success",
       "payload": {
+        "sequence": 2,
+        "driver_id": "D-LON-001",
+        "loyalty_tier": "Gold"
+      }
+    },
+    {
+      "timestamp": "2026-06-25T08:42:01.001942Z",
+      "node": "tool.ticket_repository",
+      "outcome": "success",
+      "payload": {
+        "sequence": 3,
         "ticket_ids": [
           "T-1099",
           "T-1029",
@@ -96,7 +109,36 @@
           "T-1007",
           "T-1010",
           "T-1081"
-        ],
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-06-25T08:42:01.002608Z",
+      "node": "diagnostic_extractor",
+      "outcome": "classified",
+      "payload": {
+        "sequence": 4,
+        "issue_type": "airport_short_fare",
+        "wait_minutes": 135.0,
+        "trip_distance_km": 1.5,
+        "quest_completion_ratio": null,
+        "offers_per_hour": null,
+        "multi_day_systemic_failure": false,
+        "policy_question": false,
+        "related_ticket_count": 2,
+        "recurring_technical_tickets_7d": 0,
+        "extracted_facts": [
+          "Maximum evidenced wait: 135 minutes",
+          "Minimum evidenced trip distance: 1.50 km"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-06-25T08:42:01.002796Z",
+      "node": "tool.incentive_service",
+      "outcome": "success",
+      "payload": {
+        "sequence": 5,
         "incentive_ids": [
           "INC-001",
           "INC-002",
@@ -107,7 +149,68 @@
           "Q-101",
           "Q-102",
           "Q-103"
-        ],
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-06-25T08:42:01.003000Z",
+      "node": "tool.policy_rag",
+      "outcome": "success",
+      "payload": {
+        "sequence": 6,
+        "policy_chunks": [
+          {
+            "chunk_id": "A.1",
+            "source_document": "uk_driver_retention_recovery.md",
+            "source_page": null
+          },
+          {
+            "chunk_id": "A.2",
+            "source_document": "uk_driver_retention_recovery.md",
+            "source_page": null
+          },
+          {
+            "chunk_id": "A.3",
+            "source_document": "uk_driver_retention_recovery.md",
+            "source_page": null
+          },
+          {
+            "chunk_id": "B.1",
+            "source_document": "uk_driver_retention_recovery.md",
+            "source_page": null
+          },
+          {
+            "chunk_id": "B.4",
+            "source_document": "uk_driver_retention_recovery.md",
+            "source_page": null
+          },
+          {
+            "chunk_id": "B.3",
+            "source_document": "uk_driver_retention_recovery.md",
+            "source_page": null
+          }
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-06-25T08:42:01.003110Z",
+      "node": "tool.retention_ledger",
+      "outcome": "success",
+      "payload": {
+        "sequence": 7,
+        "month_to_date_gbp": 0.0,
+        "immediate_credits_last_24h": 0
+      }
+    },
+    {
+      "timestamp": "2026-06-25T08:42:01.003140Z",
+      "node": "evidence_bundle",
+      "outcome": "assembled",
+      "payload": {
+        "sequence": 8,
+        "driver_id": "D-LON-001",
+        "ticket_count": 6,
+        "incentive_count": 9,
         "policy_chunk_ids": [
           "A.1",
           "A.2",
@@ -116,29 +219,15 @@
           "B.4",
           "B.3"
         ],
-        "ledger_complete": true,
-        "observation": {
-          "issue_type": "airport_short_fare",
-          "wait_minutes": 135.0,
-          "trip_distance_km": 1.5,
-          "quest_completion_ratio": null,
-          "offers_per_hour": null,
-          "multi_day_systemic_failure": false,
-          "policy_question": false,
-          "related_ticket_count": 2,
-          "recurring_technical_tickets_7d": 0,
-          "extracted_facts": [
-            "Maximum evidenced wait: 135 minutes",
-            "Minimum evidenced trip distance: 1.50 km"
-          ]
-        }
+        "ledger_complete": true
       }
     },
     {
-      "timestamp": "2026-06-22T06:44:53.620079Z",
+      "timestamp": "2026-06-25T08:42:01.003222Z",
       "node": "strategist",
       "outcome": "proposed",
       "payload": {
+        "sequence": 9,
         "driver_id": "D-LON-001",
         "diagnosis": "Repeated airport short-fare friction for a high-value Gold driver.",
         "churn_risk": "high",
@@ -170,10 +259,11 @@
       }
     },
     {
-      "timestamp": "2026-06-22T06:44:53.620136Z",
-      "node": "critic",
+      "timestamp": "2026-06-25T08:42:01.003440Z",
+      "node": "compliance_critic",
       "outcome": "REJECT",
       "payload": {
+        "sequence": 10,
         "decision": "REJECT",
         "violations": [
           {
@@ -181,33 +271,47 @@
             "severity": "ERROR",
             "message": "£50.00 exceeds the Gold airport cap of £25.00.",
             "suggested_fix": "Reduce the action to no more than £25.00.",
-            "action_index": 0
+            "action_index": 0,
+            "policy_chunk_ids": [
+              "B.1"
+            ]
           },
           {
             "rule_id": "B.1_INC002_RESTRICTED",
             "severity": "ERROR",
             "message": "INC-002 is reserved for documented multi-day systemic failures.",
             "suggested_fix": "Use INC-001 at the tier cap for standard short-fare recovery.",
-            "action_index": 0
+            "action_index": 0,
+            "policy_chunk_ids": [
+              "B.1"
+            ]
           }
         ],
         "verified_total_gbp": 50.0,
         "policy_chunk_ids": [
-          "A.1",
-          "A.2",
-          "A.3",
-          "B.1",
-          "B.4",
-          "B.3"
+          "B.1"
         ],
         "summary": "Plan rejected with 2 blocking policy violation(s)."
       }
     },
     {
-      "timestamp": "2026-06-22T06:44:53.620274Z",
+      "timestamp": "2026-06-25T08:42:01.003452Z",
+      "node": "critic",
+      "outcome": "REJECT",
+      "payload": {
+        "sequence": 11,
+        "rule_ids": [
+          "B.1_TIER_CAP",
+          "B.1_INC002_RESTRICTED"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-06-25T08:42:01.003718Z",
       "node": "strategist",
       "outcome": "revised",
       "payload": {
+        "sequence": 12,
         "driver_id": "D-LON-001",
         "diagnosis": "Repeated airport short-fare friction for a high-value Gold driver.",
         "churn_risk": "high",
@@ -241,10 +345,11 @@
       }
     },
     {
-      "timestamp": "2026-06-22T06:44:53.620297Z",
-      "node": "critic",
+      "timestamp": "2026-06-25T08:42:01.003853Z",
+      "node": "compliance_critic",
       "outcome": "APPROVE",
       "payload": {
+        "sequence": 13,
         "decision": "APPROVE",
         "violations": [],
         "verified_total_gbp": 25.0,
@@ -257,6 +362,26 @@
           "B.3"
         ],
         "summary": "Plan satisfies all deterministic policy checks."
+      }
+    },
+    {
+      "timestamp": "2026-06-25T08:42:01.003864Z",
+      "node": "critic",
+      "outcome": "APPROVE",
+      "payload": {
+        "sequence": 14,
+        "rule_ids": []
+      }
+    },
+    {
+      "timestamp": "2026-06-25T08:42:01.006657Z",
+      "node": "conversation_memory",
+      "outcome": "saved",
+      "payload": {
+        "sequence": 15,
+        "conversation_id": "eval-maria-self-correction",
+        "active_driver_id": "D-LON-001",
+        "last_issue_type": "airport_short_fare"
       }
     }
   ]

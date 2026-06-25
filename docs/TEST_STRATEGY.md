@@ -1,30 +1,35 @@
 # Test Strategy
 
-The test suite is intentionally weighted toward deterministic business rules because these are the
+The suite is weighted toward deterministic business rules and trust boundaries because they are the
 highest-risk failure surface.
 
 ## Layers
 
-- **Domain contracts:** strict schemas, bounds, and computed totals.
+- **Domain contracts:** strict schemas, bounds, authoritative GBP totals, and violation provenance.
 - **Repositories/tools:** exact retrieval, ordering, eligibility filtering, malformed payloads, and
   upstream failure translation.
 - **Diagnostics:** unit conversion, threshold extraction, missing facts, explicit systemic-failure
   wording, and multi-turn issue context.
-- **Compliance:** boundary values (`90` vs `>90`, `3 km` vs `<3 km`), tier caps, monthly cap,
-  stacking, technical rules, quest rules, unavailable incentives, and unknown ledgers.
+- **Compliance:** threshold boundaries, tier caps, monthly cap, stacking, technical and quest rules,
+  unavailable incentives, unknown ledgers, and policy clause mapping.
+- **Trust-boundary hardening:** category spoofing, action-type spoofing, cap and credit flag bypasses,
+  unsourced monetary actions, catalogue over-value, and invented evidence or policy references.
 - **Strategist/repair:** issue-specific plans, no invented credits, new-starter preference, and
   deterministic correction of rejected plans.
-- **Orchestration:** full Maria flow, reject→revise→approve trace, conversation memory, and conditional
-  approval for missing operational data.
+- **Orchestration:** complete Maria flow, explicit tool/actor trace, reject→revise→approve, and
+  conversation memory.
+- **Reviewer and evaluation artifacts:** one-command demonstration plus committed deterministic and
+  human-mediated correction traces.
 - **API:** health, successful contract, validation, and safe error mapping.
 
 ## Gates
 
 - 100% passing tests.
-- Branch coverage of at least 85%.
-- Ruff format/lint and strict mypy.
+- Branch-aware coverage of at least 85%.
+- Ruff formatting/lint and strict mypy.
 - Bandit and dependency audit.
-- Generated evaluation trace must contain a Critic `REJECT` followed by `APPROVE`.
+- Evaluation traces must contain a Critic `REJECT` followed by `APPROVE`.
+- Financial recommendations must have valid evidence and policy references.
 
-LLM output quality should later be evaluated separately for groundedness, empathy, and actionability.
-An LLM judge must never replace deterministic compliance tests.
+LLM output quality can additionally be evaluated for empathy and actionability, but an LLM judge must
+never replace deterministic compliance tests.

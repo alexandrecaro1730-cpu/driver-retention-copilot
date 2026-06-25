@@ -77,6 +77,9 @@ class PolicyChunk(StrictModel):
     tiers: list[LoyaltyTier] = Field(default_factory=list)
     is_global_guardrail: bool = False
     source: str
+    source_document: str | None = None
+    source_page: int | None = Field(default=None, ge=1)
+    source_sha256: str | None = None
 
 
 class DriverObservation(StrictModel):
@@ -141,7 +144,9 @@ class RetentionPlan(StrictModel):
     @computed_field  # type: ignore[prop-decorator]
     @property
     def total_gbp_value(self) -> float:
-        return round(sum(a.value_gbp for a in self.actions if a.counts_toward_monthly_cap), 2)
+        # All positive GBP value is counted. A model-provided flag must never exempt its own
+        # recommendation from the authoritative monthly cap.
+        return round(sum(action.value_gbp for action in self.actions), 2)
 
 
 class PolicyViolation(StrictModel):
@@ -150,6 +155,7 @@ class PolicyViolation(StrictModel):
     message: str
     suggested_fix: str
     action_index: int | None = Field(default=None, ge=0)
+    policy_chunk_ids: list[str] = Field(default_factory=list)
 
 
 class CriticResult(StrictModel):

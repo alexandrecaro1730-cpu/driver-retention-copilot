@@ -28,3 +28,6 @@ manual_runs/
 *.backup
 *.broken
 *.bak
+
+# Local upgrade-script backups.
+.upgrade-backup-*/

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 
+from app.compliance.classification import classify_action
 from app.compliance.rules import AIRPORT_CAPS, GLOBAL_MONTHLY_CAP
 from app.domain.enums import ActionType, ChurnRisk, IssueType, LoyaltyTier
 from app.domain.models import (
@@ -286,7 +287,9 @@ class HeuristicStrategist:
                 revised.actions[index].value_gbp = 20
             elif problem.rule_id == "A.2_CREDIT_STACKING":
                 removal_indices.update(
-                    idx for idx, action in enumerate(revised.actions) if action.immediate_credit
+                    idx
+                    for idx, action in enumerate(revised.actions)
+                    if classify_action(action, evidence).immediate_credit
                 )
                 revised.actions.append(
                     ProposedAction(
@@ -303,17 +306,80 @@ class HeuristicStrategist:
                 current = evidence.ledger.month_to_date_gbp or 0
                 remaining = max(0.0, GLOBAL_MONTHLY_CAP - current)
                 for action in revised.actions:
-                    if action.counts_toward_monthly_cap and action.value_gbp > remaining:
+                    if action.value_gbp > remaining:
                         action.value_gbp = remaining
                         action.requires_human_approval = True
                         remaining = 0
-                    elif action.counts_toward_monthly_cap:
+                    else:
                         remaining -= action.value_gbp
+            elif problem.rule_id == "ACTION_CATEGORY_MISMATCH" and index is not None:
+                revised.actions[index].category = classify_action(
+                    revised.actions[index], evidence
+                ).category
+            elif problem.rule_id == "ACTION_TYPE_MISMATCH" and index is not None:
+                revised.actions[index].action_type = classify_action(
+                    revised.actions[index], evidence
+                ).action_type
+            elif problem.rule_id == "ACTION_CAP_BYPASS_ATTEMPT" and index is not None:
+                revised.actions[index].counts_toward_monthly_cap = True
+            elif problem.rule_id == "ACTION_CREDIT_CLASSIFICATION_MISMATCH" and index is not None:
+                revised.actions[index].immediate_credit = classify_action(
+                    revised.actions[index], evidence
+                ).immediate_credit
+            elif problem.rule_id == "ACTION_VALUE_EXCEEDS_CATALOGUE" and index is not None:
+                authoritative = classify_action(revised.actions[index], evidence)
+                if authoritative.catalogue_item is not None:
+                    item = authoritative.catalogue_item
+                    if item.currency.casefold() == "gbp":
+                        revised.actions[index].value_gbp = item.value
+                    elif item.currency.casefold() == "percent":
+                        revised.actions[index].value_percent = item.value
+            elif (
+                problem.rule_id
+                in {
+                    "ACTION_UNSOURCED_MONETARY_VALUE",
+                    "ACTION_UNKNOWN_POLICY_ACTION",
+                    "ACTION_CURRENCY_MISMATCH",
+                }
+                and index is not None
+            ):
+                removal_indices.add(index)
+            elif (
+                problem.rule_id
+                in {
+                    "GROUNDING_MISSING_EVIDENCE",
+                    "GROUNDING_UNKNOWN_EVIDENCE",
+                }
+                and index is not None
+            ):
+                revised.actions[index].evidence_ids = [
+                    ticket.ticket_id for ticket in evidence.tickets[:5]
+                ]
+            elif (
+                problem.rule_id
+                in {
+                    "GROUNDING_MISSING_POLICY",
+                    "GROUNDING_UNKNOWN_POLICY",
+                }
+                and index is not None
+            ):
+                revised.actions[index].policy_chunk_ids = [
+                    chunk.chunk_id for chunk in evidence.policy_chunks
+                ]
 
         revised.actions = [
             action for idx, action in enumerate(revised.actions) if idx not in removal_indices
         ]
         if not revised.actions:
+            valid_policy_ids = {chunk.chunk_id for chunk in evidence.policy_chunks}
+            cited_policy_ids = sorted(
+                {
+                    policy_id
+                    for finding in critique.violations
+                    for policy_id in finding.policy_chunk_ids
+                    if policy_id in valid_policy_ids
+                }
+            )
             revised.actions.append(
                 ProposedAction(
                     action_type=ActionType.SUPPORT,
@@ -321,7 +387,9 @@ class HeuristicStrategist:
                     category="Compliance",
                     counts_toward_monthly_cap=False,
                     rationale="The original monetary action could not be made compliant.",
-                    policy_chunk_ids=[item.rule_id.split("_")[0] for item in critique.violations],
+                    evidence_ids=[ticket.ticket_id for ticket in evidence.tickets[:5]],
+                    policy_chunk_ids=cited_policy_ids
+                    or [chunk.chunk_id for chunk in evidence.policy_chunks[:3]],
                 )
             )
         revised.assumptions.append(
