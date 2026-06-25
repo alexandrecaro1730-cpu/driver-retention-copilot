@@ -142,10 +142,38 @@ def policy_chunks() -> list[PolicyChunk]:
             source="test",
         ),
         PolicyChunk(
+            chunk_id="A.3",
+            title="Tier Multipliers",
+            text="Churn goodwill is for Silver and Gold",
+            is_global_guardrail=True,
+            source="test",
+        ),
+        PolicyChunk(
             chunk_id="B.1",
             title="Airport Short Fares",
             text="Wait >90 and distance <3km",
             issue_types=[IssueType.AIRPORT_SHORT_FARE],
+            source="test",
+        ),
+        PolicyChunk(
+            chunk_id="B.2",
+            title="Technical & GPS Glitches",
+            text="Technical compensation is capped at £10",
+            issue_types=[IssueType.TECHNICAL_GPS],
+            source="test",
+        ),
+        PolicyChunk(
+            chunk_id="B.3",
+            title="New Starters",
+            text="Prefer commission shields",
+            issue_types=[IssueType.NEW_STARTER],
+            source="test",
+        ),
+        PolicyChunk(
+            chunk_id="B.4",
+            title="Infeasible Quests",
+            text="Goodwill is capped at £20 with diagnostics",
+            issue_types=[IssueType.QUEST],
             source="test",
         ),
     ]
@@ -197,8 +225,12 @@ def action(
     incentive_id: str | None = "INC-001",
     category: str = "Airport",
     value: float = 25,
+    value_percent: float = 0,
     immediate: bool = True,
+    counts_toward_monthly_cap: bool = True,
     action_type: ActionType = ActionType.CREDIT,
+    evidence_ids: list[str] | None = None,
+    policy_chunk_ids: list[str] | None = None,
 ) -> ProposedAction:
     return ProposedAction(
         action_type=action_type,
@@ -206,9 +238,12 @@ def action(
         incentive_id=incentive_id,
         category=category,
         value_gbp=value,
+        value_percent=value_percent,
         immediate_credit=immediate,
+        counts_toward_monthly_cap=counts_toward_monthly_cap,
         rationale="test rationale",
-        policy_chunk_ids=["B.1"],
+        evidence_ids=["T-1"] if evidence_ids is None else evidence_ids,
+        policy_chunk_ids=["B.1"] if policy_chunk_ids is None else policy_chunk_ids,
     )
 
 

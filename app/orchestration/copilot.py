@@ -2,20 +2,19 @@
 
 Business intent
 ---------------
-A manager receives one accountable recommendation, not a conversation between unconstrained agents.
-The workflow gathers evidence first, permits at most a small number of revisions, and never silently
+A manager receives one accountable recommendation, not an unconstrained agent conversation. The
+workflow gathers authoritative evidence first, permits only a small number of revisions, and never
 executes an incentive.
 
 Technical intent
 ----------------
-The explicit loop is intentionally simpler than a general agent framework. Nodes are ordinary Python
-components, state is typed, and every transition is recorded in an evaluation trace.
+The explicit loop is intentionally simpler than a general agent framework. Components are ordinary
+Python objects, state is typed, and tool/agent transitions are recorded as an inspectable audit trace.
 """
 
 from __future__ import annotations
 
 import logging
-import re
 import uuid
 from datetime import UTC, datetime
 from typing import Any
@@ -43,7 +42,6 @@ from app.memory.sqlite_store import SQLiteConversationStore
 from app.rag.policy_store import PolicyStore
 
 LOGGER = logging.getLogger(__name__)
-_NAME_HINT = re.compile(r"\b(?:driver\s+)?([A-Z][a-z]+)(?:\s+[A-Z]\.)?\b")
 
 
 class DriverRetentionCopilot:
@@ -78,22 +76,82 @@ class DriverRetentionCopilot:
             conversation_id=conversation_id
         )
         trace: list[TraceEvent] = []
+
         profile = self._resolve_driver(request, state)
-        trace.append(self._event("context", "resolved", {"driver_id": profile.driver_id}))
+        self._record(
+            trace,
+            "context_resolver",
+            "resolved",
+            {"driver_id": profile.driver_id, "reused_memory": request.driver_id is None},
+        )
+        self._record(
+            trace,
+            "tool.driver_repository",
+            "success",
+            {"driver_id": profile.driver_id, "loyalty_tier": profile.loyalty_tier.value},
+        )
 
         tickets = self._tickets.for_driver(profile.driver_id, limit=20)
+        self._record(
+            trace,
+            "tool.ticket_repository",
+            "success",
+            {"ticket_ids": [ticket.ticket_id for ticket in tickets]},
+        )
+
         observation = self._extractor.extract(
             request.message,
             profile,
             tickets,
             previous_issue_type=state.last_issue_type,
         )
+        self._record(
+            trace,
+            "diagnostic_extractor",
+            "classified",
+            observation.model_dump(mode="json"),
+        )
+
         incentives = self._incentives.available_for(profile)
+        self._record(
+            trace,
+            "tool.incentive_service",
+            "success",
+            {"incentive_ids": [item.id for item in incentives]},
+        )
+
         policy_chunks = self._policies.retrieve(
             request.message,
             issue_type=observation.issue_type,
             tier=profile.loyalty_tier,
         )
+        self._record(
+            trace,
+            "tool.policy_rag",
+            "success",
+            {
+                "policy_chunks": [
+                    {
+                        "chunk_id": chunk.chunk_id,
+                        "source_document": chunk.source_document,
+                        "source_page": chunk.source_page,
+                    }
+                    for chunk in policy_chunks
+                ]
+            },
+        )
+
+        ledger = self._ledger.get(profile.driver_id)
+        self._record(
+            trace,
+            "tool.retention_ledger",
+            "success" if ledger.complete else "incomplete",
+            {
+                "month_to_date_gbp": ledger.month_to_date_gbp,
+                "immediate_credits_last_24h": ledger.immediate_credits_last_24h,
+            },
+        )
+
         evidence = EvidenceBundle(
             query=request.message,
             profile=profile,
@@ -101,36 +159,46 @@ class DriverRetentionCopilot:
             incentives=incentives,
             policy_chunks=policy_chunks,
             observation=observation,
-            ledger=self._ledger.get(profile.driver_id),
+            ledger=ledger,
         )
-        trace.append(
-            self._event(
-                "evidence",
-                "collected",
-                {
-                    "ticket_ids": [ticket.ticket_id for ticket in tickets],
-                    "incentive_ids": [item.id for item in incentives],
-                    "policy_chunk_ids": [chunk.chunk_id for chunk in policy_chunks],
-                    "ledger_complete": evidence.ledger.complete,
-                    "observation": observation.model_dump(mode="json"),
-                },
-            )
+        self._record(
+            trace,
+            "evidence_bundle",
+            "assembled",
+            {
+                "driver_id": profile.driver_id,
+                "ticket_count": len(tickets),
+                "incentive_count": len(incentives),
+                "policy_chunk_ids": [chunk.chunk_id for chunk in policy_chunks],
+                "ledger_complete": ledger.complete,
+            },
         )
 
         plan = request.initial_plan_override or self._strategist.propose(evidence)
-        trace.append(self._event("strategist", "proposed", plan.model_dump(mode="json")))
+        self._record(trace, "strategist", "proposed", plan.model_dump(mode="json"))
 
         revisions = 0
         while True:
             critique = self._critic.validate(plan, evidence)
-            trace.append(
-                self._event("critic", critique.decision.value, critique.model_dump(mode="json"))
+            self._record(
+                trace,
+                "compliance_critic",
+                critique.decision.value,
+                critique.model_dump(mode="json"),
+            )
+            # Keep the legacy node for existing trace consumers while the explicit actor name above
+            # makes the multi-agent separation obvious to reviewers.
+            self._record(
+                trace,
+                "critic",
+                critique.decision.value,
+                {"rule_ids": [item.rule_id for item in critique.violations]},
             )
             if critique.decision is not Decision.REJECT or revisions >= self._max_revisions:
                 break
             plan = self._strategist.revise(plan, critique, evidence)
             revisions += 1
-            trace.append(self._event("strategist", "revised", plan.model_dump(mode="json")))
+            self._record(trace, "strategist", "revised", plan.model_dump(mode="json"))
 
         state.active_driver_id = profile.driver_id
         state.last_issue_type = observation.issue_type
@@ -142,6 +210,16 @@ class DriverRetentionCopilot:
         state.last_plan = plan
         state.last_critic_result = critique
         self._memory.save(state)
+        self._record(
+            trace,
+            "conversation_memory",
+            "saved",
+            {
+                "conversation_id": conversation_id,
+                "active_driver_id": profile.driver_id,
+                "last_issue_type": observation.issue_type.value,
+            },
+        )
 
         LOGGER.info(
             "copilot_run_completed",
@@ -168,8 +246,6 @@ class DriverRetentionCopilot:
         if state.active_driver_id:
             return self._drivers.get(state.active_driver_id)
 
-        # Conservative name resolution: test each known first name rather than trusting arbitrary
-        # capitalised words such as Heathrow or What.
         lowered = request.message.casefold()
         matches = [
             driver for driver in self._drivers.all() if driver.name.split()[0].casefold() in lowered
@@ -178,6 +254,22 @@ class DriverRetentionCopilot:
             return matches[0]
         raise DriverNotFoundError(
             "Provide a driver ID on the first turn; follow-up turns can reuse conversation state."
+        )
+
+    @classmethod
+    def _record(
+        cls,
+        trace: list[TraceEvent],
+        node: str,
+        outcome: str,
+        payload: dict[str, Any],
+    ) -> None:
+        trace.append(
+            cls._event(
+                node,
+                outcome,
+                {"sequence": len(trace) + 1, **payload},
+            )
         )
 
     @staticmethod

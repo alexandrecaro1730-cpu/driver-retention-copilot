@@ -2,6 +2,23 @@
 
 All notable changes follow Keep a Changelog and Semantic Versioning.
 
+## [0.4.0] - 2026-06-25
+
+### Added
+
+- Authoritative action classification so model-provided category, type, cap, and credit flags cannot bypass guardrails.
+- Evidence and policy citation validation for every financial recommendation.
+- Policy document name, SHA-256 digest, and optional PDF page provenance on retrieved chunks.
+- One-command reviewer demonstration and five-minute reviewer guide.
+- Explicit tool and agent steps in the audit trace.
+- Regression tests for metadata spoofing, invented citations, reviewer flow, and provenance.
+
+### Changed
+
+- Every positive GBP amount now counts toward the monthly cap regardless of model-provided flags.
+- Evaluation artifacts now include policy clause IDs on individual violations.
+- Documentation and validation evidence were refreshed for the hardened architecture.
+
 ## [0.2.0] - 2026-06-22
 
 ### Added

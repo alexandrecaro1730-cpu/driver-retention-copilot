@@ -32,10 +32,14 @@ class ComplianceCritic:
             decision = Decision.APPROVE
             summary = "Plan satisfies all deterministic policy checks."
 
+        cited_policy_ids = sorted(
+            {policy_id for finding in violations for policy_id in finding.policy_chunk_ids}
+        )
         return CriticResult(
             decision=decision,
             violations=violations,
             verified_total_gbp=plan.total_gbp_value,
-            policy_chunk_ids=[chunk.chunk_id for chunk in evidence.policy_chunks],
+            policy_chunk_ids=cited_policy_ids
+            or [chunk.chunk_id for chunk in evidence.policy_chunks],
             summary=summary,
         )

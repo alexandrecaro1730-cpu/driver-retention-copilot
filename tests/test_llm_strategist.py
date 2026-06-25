@@ -84,3 +84,15 @@ def test_llm_strategist_rejects_invalid_revision_number() -> None:
 
     with pytest.raises(ToolUnavailableError, match="invalid revision"):
         LLMStrategist(QueueLLM([invalid])).revise(bad, critique, ev)
+
+
+def test_llm_prompt_explains_authoritative_compliance_metadata() -> None:
+    expected = plan(action(value=25))
+    llm = QueueLLM([expected])
+
+    LLMStrategist(llm).propose(evidence())
+
+    system_prompt = str(llm.calls[0]["system_prompt"])
+    assert "preserve the Incentive Service category and action type" in system_prompt
+    assert "count every positive GBP value toward the monthly cap" in system_prompt
+    assert "cannot disable deterministic category, cap, or credit-stacking checks" in system_prompt

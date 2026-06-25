@@ -62,3 +62,25 @@ def test_parser_accepts_plain_pdf_style_section_numbering(tmp_path: Path) -> Non
     )
     store = PolicyStore.from_path(path)
     assert [chunk.chunk_id for chunk in store.all()] == ["A.1", "A.2", "B.1"]
+
+
+def test_policy_chunks_preserve_document_provenance(data_dir: Path) -> None:
+    path = data_dir / "uk_driver_retention_recovery.md"
+    chunk = PolicyStore.from_path(path).get("B.1")
+
+    assert chunk.source_document == path.name
+    assert chunk.source_sha256 is not None
+    assert len(chunk.source_sha256) == 64
+    assert chunk.source_page is None
+
+
+def test_page_markers_are_preserved_on_chunks() -> None:
+    chunks = PolicyStore._chunk_text(
+        "[[PAGE:2]]\nA.1 Global Cap\nNo package may exceed £150.\n",
+        source="policy.pdf",
+        source_document="policy.pdf",
+        source_sha256="a" * 64,
+    )
+
+    assert chunks[0].source_page == 2
+    assert chunks[0].source_document == "policy.pdf"

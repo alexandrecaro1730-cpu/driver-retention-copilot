@@ -1,4 +1,4 @@
-.PHONY: install install-locked install-all test test-fast lint format typecheck security quality run api demo trace manual-export manual-evaluate clean
+.PHONY: install install-locked install-all test test-fast lint format typecheck security quality run api demo trace manual-export manual-evaluate reviewer-demo reviewer-demo-compact reviewer-demo-json clean
 
 PYTHON ?= python
 DRIVER_ID ?= D-LON-001
@@ -59,7 +59,16 @@ demo:
 	$(PYTHON) -m app.cli demo-maria
 
 trace:
-	$(PYTHON) scripts/generate_eval_trace.py
+	$(PYTHON) -m scripts.generate_eval_trace
+
+reviewer-demo:
+	$(PYTHON) -m scripts.reviewer_demo
+
+reviewer-demo-compact:
+	$(PYTHON) -m scripts.reviewer_demo --compact
+
+reviewer-demo-json:
+	$(PYTHON) -m scripts.reviewer_demo --json
 
 manual-export:
 	$(PYTHON) -m app.cli manual-export \

@@ -1,11 +1,11 @@
 {
-  "run_id": "d8a16765-49ca-4448-977e-92acc4bc5b24",
-  "evaluated_at": "2026-06-25T06:24:27.891672Z",
+  "run_id": "814aa1f0-f3ca-4038-81de-8647cee2f9b3",
+  "evaluated_at": "2026-06-25T08:41:06.098797Z",
   "phase": "revision",
   "valid_schema": true,
   "plan": {
     "driver_id": "D-LON-001",
-    "diagnosis": "Maria is at high churn risk due to repeated airport short-fare losses after waits exceeding 90 minutes, with recent frustration specifically focused on airport queue issues.",
+    "diagnosis": "Maria is at high churn risk due to repeated airport short-fare losses after waits exceeding 90 minutes.",
     "churn_risk": "high",
     "actions": [
       {
@@ -17,15 +17,13 @@
         "value_percent": 0.0,
         "immediate_credit": true,
         "counts_toward_monthly_cap": true,
-        "rationale": "Recommend a £25.00 standard airport short-fare recovery credit. The evidenced 135-minute wait and 1.5-kilometre trip meet the airport short-fare criteria, and £25.00 is the maximum permitted per instance for a Gold-tier driver. The complete ledger shows no month-to-date retention value and no immediate credits in the previous 24 hours, so the proposed credit remains within the monthly and credit-stacking guardrails. This is a recommendation only and does not indicate that payment has been issued or approved.",
+        "rationale": "Recommend a £25 standard airport short-fare recovery credit within the Gold-tier cap.",
         "evidence_ids": [
           "T-1001",
           "T-1007",
           "observation.wait_minutes",
           "observation.trip_distance_km",
           "profile.loyalty_tier",
-          "profile.airport_short_fare_count_30d",
-          "profile.recent_sentiment",
           "ledger.month_to_date_gbp",
           "ledger.immediate_credits_last_24h"
         ],

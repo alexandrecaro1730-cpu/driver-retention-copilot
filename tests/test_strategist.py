@@ -57,3 +57,71 @@ def test_reviser_removes_action_with_missing_evidence() -> None:
     ev = evidence(wait=None, distance=None)
     revised = strategist.revise(bad, ComplianceCritic().validate(bad, ev), ev)
     assert all(item.value_gbp == 0 for item in revised.actions)
+
+
+def test_reviser_repairs_authoritative_metadata_and_flags() -> None:
+    strategist = HeuristicStrategist()
+    bad = plan(
+        action(
+            category="Engagement",
+            action_type=ActionType.SUPPORT,
+            immediate=False,
+            counts_toward_monthly_cap=False,
+        )
+    )
+    ev = evidence()
+
+    revised = strategist.revise(bad, ComplianceCritic().validate(bad, ev), ev)
+    repaired = revised.actions[0]
+
+    assert repaired.category == "Airport"
+    assert repaired.action_type is ActionType.CREDIT
+    assert repaired.immediate_credit is True
+    assert repaired.counts_toward_monthly_cap is True
+    assert ComplianceCritic().validate(revised, ev).decision is Decision.APPROVE
+
+
+def test_reviser_repairs_grounding_references() -> None:
+    strategist = HeuristicStrategist()
+    bad = plan(action(evidence_ids=["T-INVENTED"], policy_chunk_ids=["Z.99"]))
+    ev = evidence()
+
+    revised = strategist.revise(bad, ComplianceCritic().validate(bad, ev), ev)
+
+    assert revised.actions[0].evidence_ids == ["T-1"]
+    assert "B.1" in revised.actions[0].policy_chunk_ids
+    assert ComplianceCritic().validate(revised, ev).decision is Decision.APPROVE
+
+
+def test_reviser_converts_credit_stacking_failure_to_escalation() -> None:
+    strategist = HeuristicStrategist()
+    bad = plan(action(value=10))
+    ev = evidence(credits=2)
+
+    revised = strategist.revise(bad, ComplianceCritic().validate(bad, ev), ev)
+
+    assert all(item.value_gbp == 0 for item in revised.actions)
+    assert any(item.action_type is ActionType.ESCALATION for item in revised.actions)
+
+
+def test_reviser_reduces_monthly_package_to_remaining_cap() -> None:
+    strategist = HeuristicStrategist()
+    bad = plan(action(value=25))
+    ev = evidence(mtd=140)
+
+    revised = strategist.revise(bad, ComplianceCritic().validate(bad, ev), ev)
+
+    assert revised.actions[0].value_gbp == 10
+    assert revised.actions[0].requires_human_approval is True
+
+
+def test_reviser_removes_unsourced_monetary_action() -> None:
+    strategist = HeuristicStrategist()
+    bad = plan(action(incentive_id=None, value=10))
+    ev = evidence()
+
+    revised = strategist.revise(bad, ComplianceCritic().validate(bad, ev), ev)
+
+    assert len(revised.actions) == 1
+    assert revised.actions[0].action_type is ActionType.SUPPORT
+    assert revised.actions[0].value_gbp == 0

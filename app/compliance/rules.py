@@ -1,16 +1,23 @@
-"""Pure policy rules.
+"""Pure, deterministic policy and grounding rules.
 
-Business intent: monetary caps and categorical eligibility are not delegated to probabilistic model
-judgement. Each function emits a stable rule ID that can be monitored, tested, and audited.
+Business intent
+---------------
+Financial caps, eligibility, and evidence grounding are not delegated to probabilistic model
+judgement. A proposal may contain descriptive metadata, but the Compliance Critic derives the
+attributes that control guardrails from authoritative catalogue and policy data.
 
-Technical intent: rules are pure functions over typed evidence and plans. No I/O occurs here, which
-keeps edge-case testing fast and exhaustive.
+Technical intent
+----------------
+Rules are side-effect-free functions over typed evidence and plans. Stable rule IDs make failures
+explainable, testable, and suitable for production monitoring.
 """
 
 from __future__ import annotations
 
+import re
 from collections.abc import Iterable
 
+from app.compliance.classification import POLICY_ACTIONS, classify_action
 from app.domain.enums import ActionType, LoyaltyTier, Severity
 from app.domain.models import EvidenceBundle, PolicyViolation, RetentionPlan
 
@@ -21,6 +28,12 @@ AIRPORT_CAPS = {
     LoyaltyTier.BRONZE: 15.0,
 }
 
+_POLICY_PREFIX = re.compile(r"^([AB]\.\d+)")
+_RULE_POLICY_OVERRIDES: dict[str, list[str]] = {
+    "ACTION_CAP_BYPASS_ATTEMPT": ["A.1"],
+    "ACTION_CREDIT_CLASSIFICATION_MISMATCH": ["A.2"],
+}
+
 
 def violation(
     rule_id: str,
@@ -29,14 +42,84 @@ def violation(
     *,
     severity: Severity = Severity.ERROR,
     action_index: int | None = None,
+    policy_chunk_ids: list[str] | None = None,
 ) -> PolicyViolation:
+    """Create a traceable policy finding with stable policy references."""
+
+    if policy_chunk_ids is None:
+        policy_chunk_ids = _RULE_POLICY_OVERRIDES.get(rule_id, [])
+        match = _POLICY_PREFIX.match(rule_id)
+        if match:
+            policy_chunk_ids = [match.group(1)]
     return PolicyViolation(
         rule_id=rule_id,
         severity=severity,
         message=message,
         suggested_fix=fix,
         action_index=action_index,
+        policy_chunk_ids=policy_chunk_ids,
     )
+
+
+def _allowed_evidence_ids(evidence: EvidenceBundle) -> set[str]:
+    ticket_ids = {ticket.ticket_id for ticket in evidence.tickets}
+    structured = {
+        *(f"profile.{name}" for name in type(evidence.profile).model_fields),
+        *(f"observation.{name}" for name in type(evidence.observation).model_fields),
+        *(f"ledger.{name}" for name in type(evidence.ledger).model_fields),
+    }
+    return ticket_ids | structured
+
+
+def check_grounding(plan: RetentionPlan, evidence: EvidenceBundle) -> Iterable[PolicyViolation]:
+    """Reject invented citations and ungrounded financial recommendations."""
+
+    results: list[PolicyViolation] = []
+    allowed_evidence = _allowed_evidence_ids(evidence)
+    allowed_policy = {chunk.chunk_id for chunk in evidence.policy_chunks}
+
+    for index, action in enumerate(plan.actions):
+        financial = action.value_gbp > 0 or action.value_percent > 0
+
+        if financial and not action.evidence_ids:
+            results.append(
+                violation(
+                    "GROUNDING_MISSING_EVIDENCE",
+                    "A financial action has no evidence references.",
+                    "Cite retrieved ticket IDs or structured profile, observation, and ledger fields.",
+                    action_index=index,
+                )
+            )
+        elif unknown := sorted(set(action.evidence_ids) - allowed_evidence):
+            results.append(
+                violation(
+                    "GROUNDING_UNKNOWN_EVIDENCE",
+                    f"The action cites evidence not present in the evidence bundle: {unknown}.",
+                    "Remove invented references and cite only retrieved evidence IDs.",
+                    action_index=index,
+                )
+            )
+
+        if financial and not action.policy_chunk_ids:
+            results.append(
+                violation(
+                    "GROUNDING_MISSING_POLICY",
+                    "A financial action has no policy clause references.",
+                    "Cite at least one retrieved policy clause that authorises or constrains the action.",
+                    action_index=index,
+                )
+            )
+        elif unknown_policy := sorted(set(action.policy_chunk_ids) - allowed_policy):
+            results.append(
+                violation(
+                    "GROUNDING_UNKNOWN_POLICY",
+                    f"The action cites policy clauses not retrieved for this decision: {unknown_policy}.",
+                    "Use only clause IDs supplied in the policy evidence bundle.",
+                    action_index=index,
+                )
+            )
+
+    return results
 
 
 def check_monthly_cap(plan: RetentionPlan, evidence: EvidenceBundle) -> Iterable[PolicyViolation]:
@@ -67,7 +150,9 @@ def check_monthly_cap(plan: RetentionPlan, evidence: EvidenceBundle) -> Iterable
 def check_credit_stacking(
     plan: RetentionPlan, evidence: EvidenceBundle
 ) -> Iterable[PolicyViolation]:
-    proposed = sum(1 for action in plan.actions if action.immediate_credit)
+    proposed = sum(
+        1 for action in plan.actions if classify_action(action, evidence).immediate_credit
+    )
     if proposed == 0:
         return []
     existing = evidence.ledger.immediate_credits_last_24h
@@ -91,18 +176,38 @@ def check_credit_stacking(
     return []
 
 
-def check_action_rules(plan: RetentionPlan, evidence: EvidenceBundle) -> Iterable[PolicyViolation]:
+def check_action_integrity(
+    plan: RetentionPlan, evidence: EvidenceBundle
+) -> Iterable[PolicyViolation]:
+    """Validate proposal metadata against authoritative service and policy definitions."""
+
     results: list[PolicyViolation] = []
     available = {incentive.id: incentive for incentive in evidence.incentives}
-    tier = evidence.profile.loyalty_tier
-    observation = evidence.observation
 
     for index, action in enumerate(plan.actions):
-        if (
-            action.incentive_id
-            and not action.incentive_id.startswith("POLICY-")
-            and action.incentive_id not in available
-        ):
+        if action.value_gbp > 0 and action.incentive_id is None:
+            results.append(
+                violation(
+                    "ACTION_UNSOURCED_MONETARY_VALUE",
+                    "A GBP-valued action has no authoritative incentive or policy action ID.",
+                    "Select an available incentive or a registered policy action.",
+                    action_index=index,
+                )
+            )
+            continue
+
+        if action.incentive_id and action.incentive_id.startswith("POLICY-"):
+            if action.incentive_id not in POLICY_ACTIONS:
+                results.append(
+                    violation(
+                        "ACTION_UNKNOWN_POLICY_ACTION",
+                        f"{action.incentive_id} is not a registered policy action.",
+                        "Use a registered policy action or remove the monetary recommendation.",
+                        action_index=index,
+                    )
+                )
+                continue
+        elif action.incentive_id and action.incentive_id not in available:
             results.append(
                 violation(
                     "TOOL_INCENTIVE_NOT_AVAILABLE",
@@ -113,7 +218,103 @@ def check_action_rules(plan: RetentionPlan, evidence: EvidenceBundle) -> Iterabl
             )
             continue
 
-        if action.category.casefold() == "churn" and tier is LoyaltyTier.BRONZE:
+        authoritative = classify_action(action, evidence)
+        item = authoritative.catalogue_item
+
+        if item is not None and action.category.casefold() != authoritative.category.casefold():
+            results.append(
+                violation(
+                    "ACTION_CATEGORY_MISMATCH",
+                    f"The proposal labels {item.id} as {action.category!r}, but the service classifies it as {item.category!r}.",
+                    "Use the authoritative Incentive Service category.",
+                    action_index=index,
+                )
+            )
+
+        if item is not None and action.action_type is not authoritative.action_type:
+            results.append(
+                violation(
+                    "ACTION_TYPE_MISMATCH",
+                    f"The proposal action type {action.action_type.value!r} conflicts with the authoritative type {authoritative.action_type.value!r} for {item.id}.",
+                    "Use the authoritative action type.",
+                    action_index=index,
+                )
+            )
+
+        if authoritative.counts_toward_monthly_cap and not action.counts_toward_monthly_cap:
+            results.append(
+                violation(
+                    "ACTION_CAP_BYPASS_ATTEMPT",
+                    "A positive GBP action was marked as excluded from the monthly cap.",
+                    "Count every positive GBP action toward the monthly retention cap.",
+                    action_index=index,
+                )
+            )
+
+        if action.immediate_credit != authoritative.immediate_credit:
+            results.append(
+                violation(
+                    "ACTION_CREDIT_CLASSIFICATION_MISMATCH",
+                    "The proposal's immediate-credit flag conflicts with the authoritative action classification.",
+                    "Use the deterministic credit classification; do not use proposal flags to control stacking checks.",
+                    action_index=index,
+                )
+            )
+
+        if item is not None:
+            if item.currency.casefold() == "gbp":
+                if action.value_percent > 0:
+                    results.append(
+                        violation(
+                            "ACTION_CURRENCY_MISMATCH",
+                            f"{item.id} is GBP-valued but the proposal also supplies a percentage value.",
+                            "Remove the percentage value.",
+                            action_index=index,
+                        )
+                    )
+                if action.value_gbp > item.value:
+                    results.append(
+                        violation(
+                            "ACTION_VALUE_EXCEEDS_CATALOGUE",
+                            f"£{action.value_gbp:.2f} exceeds the service value of £{item.value:.2f} for {item.id}.",
+                            f"Reduce the proposal to no more than £{item.value:.2f} before policy caps are applied.",
+                            action_index=index,
+                        )
+                    )
+            elif item.currency.casefold() == "percent":
+                if action.value_gbp > 0:
+                    results.append(
+                        violation(
+                            "ACTION_CURRENCY_MISMATCH",
+                            f"{item.id} is percentage-valued but the proposal supplies a GBP value.",
+                            "Use value_percent and set value_gbp to zero.",
+                            action_index=index,
+                        )
+                    )
+                if action.value_percent > item.value:
+                    results.append(
+                        violation(
+                            "ACTION_VALUE_EXCEEDS_CATALOGUE",
+                            f"{action.value_percent:.2f}% exceeds the service value of {item.value:.2f}% for {item.id}.",
+                            f"Reduce the proposal to no more than {item.value:.2f}%.",
+                            action_index=index,
+                        )
+                    )
+
+    return results
+
+
+def check_action_rules(plan: RetentionPlan, evidence: EvidenceBundle) -> Iterable[PolicyViolation]:
+    results: list[PolicyViolation] = []
+    available = {incentive.id: incentive for incentive in evidence.incentives}
+    tier = evidence.profile.loyalty_tier
+    observation = evidence.observation
+
+    for index, action in enumerate(plan.actions):
+        authoritative = classify_action(action, evidence)
+        category = authoritative.category.casefold()
+
+        if category == "churn" and tier is LoyaltyTier.BRONZE:
             results.append(
                 violation(
                     "A.3_CHURN_TIER",
@@ -123,7 +324,7 @@ def check_action_rules(plan: RetentionPlan, evidence: EvidenceBundle) -> Iterabl
                 )
             )
 
-        if action.category.casefold() == "airport" and action.value_gbp > 0:
+        if category == "airport" and action.value_gbp > 0:
             if observation.wait_minutes is None or observation.trip_distance_km is None:
                 results.append(
                     violation(
@@ -187,7 +388,7 @@ def check_action_rules(plan: RetentionPlan, evidence: EvidenceBundle) -> Iterabl
                     )
                 )
 
-        if action.category.casefold() == "technical" and action.value_gbp > 10:
+        if category == "technical" and action.value_gbp > 10:
             results.append(
                 violation(
                     "B.2_TECHNICAL_CAP",
@@ -207,7 +408,7 @@ def check_action_rules(plan: RetentionPlan, evidence: EvidenceBundle) -> Iterabl
                 )
             )
 
-        if action.category.casefold() == "quest" and action.value_gbp > 0:
+        if category == "quest" and action.value_gbp > 0:
             if (
                 observation.quest_completion_ratio is None
                 or observation.quest_completion_ratio <= 0.8
@@ -233,9 +434,13 @@ def check_action_rules(plan: RetentionPlan, evidence: EvidenceBundle) -> Iterabl
                 )
 
     if evidence.profile.tenure_months < 3:
-        direct_credit = any(a.action_type is ActionType.CREDIT for a in plan.actions)
+        direct_credit = any(
+            classify_action(action, evidence).action_type is ActionType.CREDIT
+            and action.value_gbp > 0
+            for action in plan.actions
+        )
         shield_available = "INC-006" in available
-        shield_selected = any(a.incentive_id == "INC-006" for a in plan.actions)
+        shield_selected = any(action.incentive_id == "INC-006" for action in plan.actions)
         if direct_credit and shield_available and not shield_selected:
             results.append(
                 violation(
@@ -250,6 +455,8 @@ def check_action_rules(plan: RetentionPlan, evidence: EvidenceBundle) -> Iterabl
 
 def run_all_rules(plan: RetentionPlan, evidence: EvidenceBundle) -> list[PolicyViolation]:
     return [
+        *check_grounding(plan, evidence),
+        *check_action_integrity(plan, evidence),
         *check_monthly_cap(plan, evidence),
         *check_credit_stacking(plan, evidence),
         *check_action_rules(plan, evidence),

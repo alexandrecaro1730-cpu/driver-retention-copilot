@@ -15,7 +15,7 @@ def test_models_reject_unknown_fields() -> None:
         )
 
 
-def test_plan_computes_only_cap_counting_gbp() -> None:
+def test_plan_counts_all_positive_gbp_regardless_of_model_flag() -> None:
     plan = RetentionPlan(
         driver_id="D-LON-001",
         diagnosis="x",
@@ -38,7 +38,7 @@ def test_plan_computes_only_cap_counting_gbp() -> None:
             ),
         ],
     )
-    assert plan.total_gbp_value == 10
+    assert plan.total_gbp_value == 60
 
 
 def test_negative_money_is_rejected() -> None:
